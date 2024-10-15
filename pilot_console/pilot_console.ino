@@ -3,10 +3,9 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_SH110X.h>
 
-HardwareSerial inputSerial = Serial1;
 #define BTN_LED 10
 #define BTN_PIN 16
-#define LED_INCR 12
+#define LED_INCR 30
 
 #define i2c_Address 0x3c  //initialize with the I2C addr 0x3C Typically eBay OLED's
 //#define i2c_Address 0x3d //initialize with the I2C addr 0x3D Typically Adafruit OLED's
@@ -18,6 +17,7 @@ Adafruit_SH1106G display = Adafruit_SH1106G(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, 
 
 enum States {
   READY,
+  SET,
   FIGHT,
   PAUSE,
   END
@@ -25,10 +25,10 @@ enum States {
 
 States current_state = READY;
 void setup() {
-  inputSerial.begin(9600);
-  pinMode(10, OUTPUT);
-  pinMode(16, INPUT_PULLUP);
-
+  delay(10000);
+  Serial1.begin(9600);
+  pinMode(BTN_LED, OUTPUT);
+  pinMode(BTN_PIN, INPUT_PULLUP);
   delay(250);                        // wait for the OLED to power up
   display.begin(i2c_Address, true);  // Address 0x3C default
   //display.setContrast (1); // dim display
@@ -41,11 +41,11 @@ int secs = 180;
 int cmd = 200;
 int led_brightness = 0;
 int brightness_dir = 1;
-bool btn_state = true;
 bool btn_hold = false;
 String inString = "";
 
 void loop() {
+  
   bool btn_press = !digitalRead(BTN_PIN);
   bool btn_just_pressed = false;
   if(btn_press && !btn_hold){
@@ -54,8 +54,8 @@ void loop() {
   }else if(!btn_press){
     btn_hold = false;
   }
-  while (inputSerial.available() > 0) {
-    int inChar = inputSerial.read();
+  while (Serial1.available() > 0) {
+    int inChar = Serial1.read();
     if (isDigit(inChar)) {
       // convert the incoming byte to a char and add it to the string:
       inString += (char)inChar;
@@ -78,14 +78,16 @@ void loop() {
   } else if (cmd == 200) {
     current_state = READY;
   } else if (cmd == 201) {
-    current_state = PAUSE;
+    current_state = SET;
   } else if (cmd == 202) {
+    current_state = PAUSE;
+  }else if (cmd == 203) {
     current_state = END;
   }
   switch (current_state) {
     case READY:
       if(btn_just_pressed){
-        inputSerial.println("r");
+        Serial1.println("r");
       }
       led_fade_step();
       display.clearDisplay();
@@ -96,28 +98,35 @@ void loop() {
       display.println("Ready");
       display.display();
       break;
+    case SET:
+      digitalWrite(10, LOW);
+      display.clearDisplay();
+      display.setTextSize(4);
+      display.setTextColor(SH110X_WHITE);
+      display.setCursor(20, 20);
+      display.println("SET");
+      display.display();
+      break;
     case FIGHT:
       if(btn_just_pressed){
-        inputSerial.println("t");
+        Serial1.println("t");
       }
       digitalWrite(10, HIGH);
       led_brightness = 255;
       display.clearDisplay();
       display.setTextSize(4);
       display.setTextColor(SH110X_WHITE);
-      //display.setCursor(16, 20);
-      display.setCursor(0, 0);
-      display.println("FF ->");
+      display.setCursor(20, 20);
       display.println(time_from_int(secs));
       display.display();
       break;
     case PAUSE:
-      led_fade_step();
+      digitalWrite(10, LOW);
       display.clearDisplay();
       display.setTextSize(4);
       display.setTextColor(SH110X_WHITE);
       display.setCursor(0, 0);
-      display.println("STOP");
+      display.println("PAUSE");
       display.println(time_from_int(secs));
       display.display();
       break;
@@ -143,6 +152,7 @@ void led_fade_step() {
     brightness_dir *= -1;
   }
 }
+
 String time_from_int(int secs) {
   String time_str = "0:";
   if (secs >= 60) {

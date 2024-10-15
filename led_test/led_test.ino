@@ -21,7 +21,7 @@ void loop() {
       FastLED.show();
       break;
     case 'r':
-      leds[0] = CRGB(255, 0, 0);
+      leds[0] = CRGB(255, 255, 0);
       FastLED.show();
       break;
     case 'g':
