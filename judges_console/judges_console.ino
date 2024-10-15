@@ -1,4 +1,6 @@
 #include <FastLED.h>
+#include "led_display.h"
+#include "writings.h"
 #define NUM_LEDS 1     // Numero de leds
 #define LEDRGB_PIN 10  // LEDRGB_PIN ARDUINO
 #define BTN_LED 6
@@ -30,6 +32,8 @@ int fight_seconds = match_length;
 int countdown_i = 0;
 bool player_b_ready = false;
 bool player_y_ready = true;
+bool player_b_tap = false;
+bool player_y_tap = false;
 unsigned long current_time = 0;
 unsigned long countdown_time = 0;
 unsigned long match_time = 0;
@@ -40,6 +44,7 @@ void setup() {
   Serial.begin(9600);
   pinMode(BTN_LED, OUTPUT);
   pinMode(BTN_PIN, INPUT_PULLUP);
+  init_led_display();
   FastLED.addLeds<WS2812, LEDRGB_PIN, GRB>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
   FastLED.clear();
   sendCmd(200);
@@ -89,18 +94,29 @@ void handle_consoles() {
     }
   }
 }
-
+int scrol_off = 0;
+unsigned long scroll_time = 0;
+void scroll_writing(unsigned char writing[], int size) {
+  display_matrix_scroll(writing, scrol_off, size);
+  if (current_time - scroll_time > 150) {
+    scroll_time = current_time;
+    scrol_off = (scrol_off + 1) % size;
+  }
+}
 void handle_state() {
   switch (current_state) {
     case STANDBY:
+      scroll_writing(waiting, sizeof(waiting));
       leds[0] = CRGB(255, 255, 0);
       FastLED.show();
       break;
     case PLAYER_READY:
+      scroll_writing(ready, sizeof(ready));
       leds[0] = CRGB(255, 255, 0);
       FastLED.show();
       break;
     case COUNTDOWN:
+      display_seconds(fight_seconds);
       if (current_time - countdown_time < 500) {
         leds[0] = CRGB(0, 255, 0);
         FastLED.show();
@@ -121,6 +137,7 @@ void handle_state() {
       if (current_time - match_time >= 1000) {
         match_time = current_time;
         sendCmd(fight_seconds);
+        display_seconds(fight_seconds);
         fight_seconds--;
         if (fight_seconds < 0) {
           transition(TIMEOUT);
@@ -130,10 +147,19 @@ void handle_state() {
       FastLED.show();
       break;
     case PAUSE:
+      scroll_writing(pause, sizeof(pause));
       leds[0] = CRGB(255, 0, 0);
       FastLED.show();
       break;
     case END:
+      if(player_b_tap){
+        scroll_writing(blue_tap, sizeof(blue_tap));
+      }else if(player_y_tap){
+        scroll_writing(yellow_tap, sizeof(yellow_tap));
+      }else{
+        matrix_display(end);
+      }
+      
       leds[0] = CRGB(255, 0, 0);
       FastLED.show();
       break;
@@ -168,9 +194,11 @@ void transition(int transition) {
       break;
     case FIGHT:
       if (transition == PLAYER_B_T) {
+        player_y_tap = true;
         current_state = END;
       }
       if (transition == PLAYER_Y_T) {
+        player_y_tap = true;
         current_state = END;
       }
       if (transition == SET) {
@@ -194,8 +222,12 @@ void transition(int transition) {
     match_time = 0;
     player_b_ready = false;
     player_y_ready = true;
+    player_b_tap = false;
+    player_y_tap = false;
   }
   if (current_state != prev_state) {
+    scrol_off = 0;
+    scroll_time = 0;
     switch (current_state) {
       case STANDBY:
         sendCmd(200);
@@ -211,7 +243,7 @@ void transition(int transition) {
         match_time = 0;
         break;
       case PAUSE:
-      fight_seconds ++;
+        fight_seconds++;
         sendCmd(202);
         break;
       case END:
