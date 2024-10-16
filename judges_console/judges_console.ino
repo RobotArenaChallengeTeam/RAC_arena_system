@@ -2,7 +2,7 @@
 #include "led_display.h"
 #include "writings.h"
 #define NUM_LEDS 1     // Numero de leds
-#define LEDRGB_PIN 10  // LEDRGB_PIN ARDUINO
+#define LEDRGB_PIN 3  // LEDRGB_PIN ARDUINO
 #define BTN_LED 6
 #define BTN_PIN 4
 #define LED_INCR 30
@@ -31,7 +31,7 @@ int match_length = 180;
 int fight_seconds = match_length;
 int countdown_i = 0;
 bool player_b_ready = false;
-bool player_y_ready = true;
+bool player_y_ready = false;
 bool player_b_tap = false;
 bool player_y_tap = false;
 unsigned long current_time = 0;
@@ -75,8 +75,8 @@ void handle_consoles() {
       transition(RESET);
     }
   }
-  if (Serial1.available()) {
-    char cmd_b = Serial1.read();
+  if (Serial2.available()) {
+    char cmd_b = Serial2.read();
     if (cmd_b == 'r') {
       transition(PLAYER_B_R);
     }
@@ -84,8 +84,8 @@ void handle_consoles() {
       transition(PLAYER_B_T);
     }
   }
-  if (Serial2.available()) {
-    char cmd_y = Serial2.read();
+  if (Serial1.available()) {
+    char cmd_y = Serial1.read();
     if (cmd_y == 'r') {
       transition(PLAYER_Y_R);
     }
@@ -175,7 +175,7 @@ void transition(int transition) {
         sendCmd(201);
       }
       if (transition == PLAYER_Y_R) {
-        player_b_ready = true;
+        player_y_ready = true;
         sendCmd(201);
       }
       if (player_y_ready && player_b_ready) {
@@ -194,7 +194,7 @@ void transition(int transition) {
       break;
     case FIGHT:
       if (transition == PLAYER_B_T) {
-        player_y_tap = true;
+        player_b_tap = true;
         current_state = END;
       }
       if (transition == PLAYER_Y_T) {
@@ -257,10 +257,10 @@ void sendCmd(int cmd) {
   Serial.println(cmd);
   if (cmd == 201) {
     if (player_b_ready) {
-      Serial1.println(201);
+      Serial2.println(201);
     }
     if (player_y_ready) {
-      Serial2.println(201);
+      Serial1.println(201);
     }
     return;
   }
