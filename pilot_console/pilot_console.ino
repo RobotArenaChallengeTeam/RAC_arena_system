@@ -23,35 +23,51 @@ enum States {
   END
 };
 
-States current_state = READY;
-void setup() {
-  delay(10000);
-  Serial1.begin(9600);
-  pinMode(BTN_LED, OUTPUT);
-  pinMode(BTN_PIN, INPUT_PULLUP);
-  delay(250);                        // wait for the OLED to power up
-  display.begin(i2c_Address, true);  // Address 0x3C default
-  //display.setContrast (1); // dim display
-  // invert the display
-  //display.invertDisplay(true);
-  //display.invertDisplay(false);
-}
-
 int secs = 180;
 int cmd = 200;
 int led_brightness = 0;
 int brightness_dir = 1;
 bool btn_hold = false;
 String inString = "";
+unsigned long current_time = 0;
+States current_state = READY;
+void setup() {
+
+  Serial.begin(9600);
+  pinMode(BTN_LED, OUTPUT);
+  pinMode(BTN_PIN, INPUT_PULLUP);
+  delay(250);                        // wait for the OLED to power up
+  display.begin(i2c_Address, true);  // Address 0x3C default
+  display.clearDisplay();
+  display.setTextColor(SH110X_WHITE);
+  //display.setContrast (1); // dim display
+  // invert the display
+  //display.invertDisplay(true);
+  //display.invertDisplay(false);
+  for (int w_i = 0; w_i < 10; w_i++) {
+    digitalWrite(10, LOW);
+    display.clearDisplay();
+    display.setCursor(0, 0);
+    for (int d_i = 0; d_i < 10-w_i; d_i++) {
+      	display.print(".");
+    }
+    display.display();
+    delay(1000);
+  }
+  display.setTextSize(4);
+  Serial1.begin(9600);
+}
+
+
 
 void loop() {
-  
+  current_time = millis();
   bool btn_press = !digitalRead(BTN_PIN);
   bool btn_just_pressed = false;
-  if(btn_press && !btn_hold){
+  if (btn_press && !btn_hold) {
     btn_hold = true;
     btn_just_pressed = true;
-  }else if(!btn_press){
+  } else if (!btn_press) {
     btn_hold = false;
   }
   while (Serial1.available() > 0) {
@@ -81,18 +97,16 @@ void loop() {
     current_state = SET;
   } else if (cmd == 202) {
     current_state = PAUSE;
-  }else if (cmd == 203) {
+  } else if (cmd == 203) {
     current_state = END;
   }
   switch (current_state) {
     case READY:
-      if(btn_just_pressed){
+      if (btn_just_pressed) {
         Serial1.println("r");
       }
       led_fade_step();
       display.clearDisplay();
-      display.setTextSize(4);
-      display.setTextColor(SH110X_WHITE);
       display.setCursor(0, 0);
       display.println(" GET");
       display.println("Ready");
@@ -101,21 +115,17 @@ void loop() {
     case SET:
       digitalWrite(10, LOW);
       display.clearDisplay();
-      display.setTextSize(4);
-      display.setTextColor(SH110X_WHITE);
       display.setCursor(20, 20);
       display.println("SET");
       display.display();
       break;
     case FIGHT:
-      if(btn_just_pressed){
+      if (btn_just_pressed) {
         Serial1.println("t");
       }
       digitalWrite(10, HIGH);
       led_brightness = 255;
       display.clearDisplay();
-      display.setTextSize(4);
-      display.setTextColor(SH110X_WHITE);
       display.setCursor(20, 20);
       display.println(time_from_int(secs));
       display.display();
@@ -123,8 +133,6 @@ void loop() {
     case PAUSE:
       digitalWrite(10, LOW);
       display.clearDisplay();
-      display.setTextSize(4);
-      display.setTextColor(SH110X_WHITE);
       display.setCursor(0, 0);
       display.println("PAUSE");
       display.println(time_from_int(secs));
@@ -134,14 +142,12 @@ void loop() {
       digitalWrite(10, LOW);
       led_brightness = 0;
       display.clearDisplay();
-      display.setTextSize(4);
-      display.setTextColor(SH110X_WHITE);
       display.setCursor(20, 20);
       display.println("END");
       display.display();
       break;
   }
-  delay(10);
+  Serial.println(millis() - current_time);
 }
 
 void led_fade_step() {

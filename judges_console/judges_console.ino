@@ -58,6 +58,7 @@ void loop() {
 }
 bool btn_hold = false;
 unsigned long btn_press_time = 0;
+bool longpress = false;
 
 void handle_consoles() {
   bool btn_press = !digitalRead(BTN_PIN);
@@ -68,10 +69,12 @@ void handle_consoles() {
     if (btn_hold == true && current_time - btn_press_time < 1000 && current_time - btn_press_time > 60) {
       transition(SET);
     }
+    longpress = false;
     btn_hold = false;
   }
   if (btn_hold) {
-    if (current_time - btn_press_time > 3000) {
+    if (!longpress && current_time - btn_press_time > 3000) {
+      longpress = true;
       transition(RESET);
     }
   }
@@ -224,6 +227,7 @@ void transition(int transition) {
   if (transition == RESET) {
     fight_seconds = match_length;
     current_state = STANDBY;
+    prev_state = END;
     match_time = 0;
     player_b_ready = false;
     player_y_ready = false;
