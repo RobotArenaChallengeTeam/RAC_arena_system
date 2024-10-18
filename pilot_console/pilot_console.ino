@@ -32,8 +32,6 @@ String inString = "";
 unsigned long current_time = 0;
 States current_state = READY;
 void setup() {
-
-  Serial.begin(9600);
   pinMode(BTN_LED, OUTPUT);
   pinMode(BTN_PIN, INPUT_PULLUP);
   delay(250);                        // wait for the OLED to power up
@@ -61,7 +59,6 @@ void setup() {
 
 
 void loop() {
-  current_time = millis();
   bool btn_press = !digitalRead(BTN_PIN);
   bool btn_just_pressed = false;
   if (btn_press && !btn_hold) {
@@ -147,7 +144,6 @@ void loop() {
       display.display();
       break;
   }
-  Serial.println(millis() - current_time);
 }
 
 void led_fade_step() {

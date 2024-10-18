@@ -1,11 +1,15 @@
 #include <FastLED.h>
 #include "led_display.h"
 #include "writings.h"
-#define NUM_LEDS 1     // Numero de leds
-#define LEDRGB_PIN 5  // LEDRGB_PIN ARDUINO
+#include "pit_motor.h"
+
+#define LEDRGB_PIN 5  
 #define BTN_LED 3
 #define BTN_PIN 2
+#define OVERRIDE_PIN A11
+
 #define LED_INCR 30
+#define NUM_LEDS 200     // Numero de leds
 
 CRGB leds[NUM_LEDS];
 
@@ -28,6 +32,7 @@ enum Transition { RESET,
 
 State current_state = STANDBY;
 int match_length = 180;
+int rac_length = 90;
 int fight_seconds = match_length;
 int countdown_i = 0;
 bool player_b_ready = false;
@@ -44,13 +49,20 @@ void setup() {
   Serial.begin(9600);
   pinMode(BTN_LED, OUTPUT);
   pinMode(BTN_PIN, INPUT_PULLUP);
+  pinMode(OVERRIDE_PIN, INPUT_PULLUP);
+  init_pit();
+  if(!digitalRead(OVERRIDE_PIN)){
+    match_length = rac_length;
+  }
   init_led_display();
   FastLED.addLeds<WS2812, LEDRGB_PIN, GRB>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
   FastLED.clear();
+
   sendCmd(200);
 }
 
 void loop() {
+  pit_up();
   current_time = millis();
   handle_state();
   handle_consoles();
@@ -101,9 +113,14 @@ int scrol_off = 0;
 unsigned long scroll_time = 0;
 void scroll_writing(unsigned char writing[], int size,int scroll_speed=150) {
   display_matrix_scroll(writing, scrol_off, size);
-  if (current_time - scroll_time > scroll_speed) {
+  int ms_delta = (scroll_speed > 0) ? scroll_speed : -scroll_speed;
+  if (current_time - scroll_time > ms_delta) {
     scroll_time = current_time;
-    scrol_off = (scrol_off + 1) % size;
+    if(scroll_speed > 0){
+      scrol_off = (scrol_off + 1) % size;
+    }else{
+      scrol_off = (scrol_off-1+size) % size;
+    }
   }
 }
 void handle_state() {
@@ -122,7 +139,7 @@ void handle_state() {
       break;
     case COUNTDOWN:
       digitalWrite(BTN_LED, LOW);
-      scroll_writing(arrows, sizeof(arrows),50);
+      scroll_writing(arrows, sizeof(arrows),-50);
       if (current_time - countdown_time < 500) {
         leds[0] = CRGB(0, 255, 0);
         FastLED.show();
