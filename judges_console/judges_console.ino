@@ -3,14 +3,14 @@
 #include "writings.h"
 #include "pit_motor.h"
 
-#define LEDRGB_PIN 5  
+#define LEDRGB_PIN 5
 #define BTN_LED 3
 #define BTN_PIN 2
 #define OVERRIDE_PIN A11
 
 #define LED_INCR 30
-#define NUM_LEDS 200     // Numero de leds
-
+#define NUM_LEDS 200  // Numero de leds
+#define PIT_MOVE_TIME 5000
 CRGB leds[NUM_LEDS];
 
 enum State { STANDBY,
@@ -20,6 +20,12 @@ enum State { STANDBY,
              PAUSE,
              END
 };
+
+enum PitCommand { PIT_UP,
+                  PIT_DOWN,
+                  PIT_STOP
+};
+
 enum Transition { RESET,
                   SET,
                   PLAYER_B_R,
@@ -39,6 +45,10 @@ bool player_b_ready = false;
 bool player_y_ready = false;
 bool player_b_tap = false;
 bool player_y_tap = false;
+bool override_mode = false;
+PitCommand pit_cmd = PIT_STOP;
+PitCommand pit_state = PIT_STOP;
+unsigned long pit_cmd_ms = 0;
 unsigned long current_time = 0;
 unsigned long countdown_time = 0;
 unsigned long match_time = 0;
@@ -51,8 +61,12 @@ void setup() {
   pinMode(BTN_PIN, INPUT_PULLUP);
   pinMode(OVERRIDE_PIN, INPUT_PULLUP);
   init_pit();
-  if(!digitalRead(OVERRIDE_PIN)){
+  if (!digitalRead(BTN_PIN)) {
     match_length = rac_length;
+    fight_seconds = rac_length;
+  }
+  if (!digitalRead(OVERRIDE_PIN)) {
+    override_mode = true;
   }
   init_led_display();
   FastLED.addLeds<WS2812, LEDRGB_PIN, GRB>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
@@ -62,11 +76,43 @@ void setup() {
 }
 
 void loop() {
-  pit_up();
+  handle_pit();
   current_time = millis();
   handle_state();
   handle_consoles();
   delay(50);
+}
+
+void handle_pit() {
+  if (override_mode) {
+    if (!digitalRead(OVERRIDE_PIN)) {
+      pit_cmd = PIT_UP;
+    } else {
+      pit_cmd = PIT_DOWN;
+    }
+  }
+
+  if(pit_state != pit_cmd){
+    if(pit_cmd == PIT_DOWN && digitalRead(OVERRIDE_PIN)){
+      pit_state = PIT_DOWN;
+      pit_cmd_ms = current_time;
+    }
+    if(pit_cmd == PIT_UP && !digitalRead(OVERRIDE_PIN)){
+      pit_state = PIT_UP;
+      pit_cmd_ms = current_time;
+    }
+  }
+
+  if(current_time - pit_cmd_ms < PIT_MOVE_TIME){
+    if(pit_cmd == PIT_DOWN){
+      pit_down();
+    }
+    if(pit_cmd == PIT_UP){
+      pit_up();
+    }
+  }else{
+    pit_stop();
+  }
 }
 bool btn_hold = false;
 unsigned long btn_press_time = 0;
@@ -111,37 +157,38 @@ void handle_consoles() {
 }
 int scrol_off = 0;
 unsigned long scroll_time = 0;
-void scroll_writing(unsigned char writing[], int size,int scroll_speed=150) {
+void scroll_writing(unsigned char writing[], int size, int scroll_speed = 150) {
   display_matrix_scroll(writing, scrol_off, size);
   int ms_delta = (scroll_speed > 0) ? scroll_speed : -scroll_speed;
   if (current_time - scroll_time > ms_delta) {
     scroll_time = current_time;
-    if(scroll_speed > 0){
+    if (scroll_speed > 0) {
       scrol_off = (scrol_off + 1) % size;
-    }else{
-      scrol_off = (scrol_off-1+size) % size;
+    } else {
+      scrol_off = (scrol_off - 1 + size) % size;
     }
   }
 }
 void handle_state() {
   switch (current_state) {
     case STANDBY:
+      pit_cmd = PIT_UP;
       digitalWrite(BTN_LED, LOW);
       scroll_writing(waiting, sizeof(waiting));
-      leds[0] = CRGB(255, 255, 0);
+      set_leds(CRGB(255, 255, 0));
       FastLED.show();
       break;
     case PLAYER_READY:
       led_fade_step();
       scroll_writing(ready, sizeof(ready));
-      leds[0] = CRGB(255, 255, 0);
+      set_leds(CRGB(255, 255, 0));
       FastLED.show();
       break;
     case COUNTDOWN:
       digitalWrite(BTN_LED, LOW);
-      scroll_writing(arrows, sizeof(arrows),-50);
+      scroll_writing(arrows, sizeof(arrows), 50);
       if (current_time - countdown_time < 500) {
-        leds[0] = CRGB(0, 255, 0);
+        set_leds(CRGB(0, 255, 0));
         FastLED.show();
       } else {
         FastLED.clear();
@@ -167,25 +214,28 @@ void handle_state() {
           transition(TIMEOUT);
         }
       }
-      leds[0] = CRGB(255, 255, 255);
+      if(fight_seconds < 90){
+        pit_cmd = PIT_DOWN;
+      }
+      set_leds(CRGB(255, 255, 255));
       FastLED.show();
       break;
     case PAUSE:
       led_fade_step();
       scroll_writing(pause, sizeof(pause));
-      leds[0] = CRGB(255, 0, 0);
+      set_leds(CRGB(255, 0, 0));
       FastLED.show();
       break;
     case END:
-    digitalWrite(BTN_LED, LOW);
-      if(player_b_tap){
+      digitalWrite(BTN_LED, LOW);
+      if (player_b_tap) {
         scroll_writing(blue_tap, sizeof(blue_tap));
-      }else if(player_y_tap){
+      } else if (player_y_tap) {
         scroll_writing(yellow_tap, sizeof(yellow_tap));
-      }else{
+      } else {
         matrix_display(end);
       }
-      leds[0] = CRGB(255, 0, 0);
+      set_leds(CRGB(255, 0, 0));
       FastLED.show();
       break;
   }
@@ -302,5 +352,11 @@ void led_fade_step() {
   led_brightness = constrain(led_brightness, 0, 255);
   if (led_brightness == 0 || led_brightness == 255) {
     brightness_dir *= -1;
+  }
+}
+
+void set_leds(CRGB color) {
+  for (int l = 0; l < NUM_LEDS; l++) {
+    leds[l] = color;
   }
 }

@@ -1,3 +1,4 @@
+#include "HardwareSerial.h"
 #define APWM_PIN 53
 #define AIN1_PIN 51 
 #define AIN2_PIN 49 
@@ -30,18 +31,21 @@ void init_pit(){
 
 
 void pit_up(){
+  //Serial.println("pit up");
   digitalWrite(APWM_PIN, HIGH);
-  digitalWrite(AIN1_PIN, HIGH);
-  digitalWrite(AIN2_PIN, LOW);
+  digitalWrite(AIN2_PIN, HIGH);
+  digitalWrite(AIN1_PIN, LOW);
 }
 
 void pit_down(){
+  //Serial.println("pit down");
   digitalWrite(APWM_PIN, HIGH);
-  digitalWrite(AIN1_PIN, LOW);
-  digitalWrite(AIN2_PIN, HIGH);
+  digitalWrite(AIN2_PIN, LOW);
+  digitalWrite(AIN1_PIN, HIGH);
 }
 
 void pit_stop(){
+  //Serial.println("pit stop");
   digitalWrite(APWM_PIN, LOW);
   digitalWrite(AIN1_PIN, HIGH);
   digitalWrite(AIN2_PIN, HIGH);
