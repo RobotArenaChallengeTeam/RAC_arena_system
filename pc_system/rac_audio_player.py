@@ -58,7 +58,7 @@ label = tk.Label(root, text="-", font=("Arial Bold", 100), bg="#00ff00", fg="whi
 label.place(relx=0.5, rely=0.5, anchor="center")  # Posizionamento centrale
 
 cmd = ""
-audio_path ='C:/Users/Paolo/Documents/repos/RAC_arena_system/pc_system/audio/'
+audio_path ='./audio/'
 while True:
     in_ch = ser.read().decode("utf-8")
     if in_ch != '\n':
