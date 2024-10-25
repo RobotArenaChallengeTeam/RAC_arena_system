@@ -53,6 +53,7 @@ unsigned long pit_cmd_ms = 0;
 unsigned long current_time = 0;
 unsigned long countdown_time = 0;
 unsigned long match_time = 0;
+unsigned long blink_time = 0;
 
 void setup() {
   Serial1.begin(9600);
@@ -195,7 +196,7 @@ void handle_state() {
       digitalWrite(BTN_LED, LOW);
       scroll_writing(arrows, sizeof(arrows), 50);
       if (current_time - countdown_time < 500) {
-        set_leds(CRGB(0, 255, 0));
+        set_leds(CRGB(255, 0, 0));
         FastLED.show();
       } else {
         FastLED.clear();
@@ -230,7 +231,13 @@ void handle_state() {
     case PAUSE:
       led_fade_step();
       scroll_writing(pause, sizeof(pause));
-      set_leds(CRGB(255, 0, 0));
+      if (current_time - blink_time < 400){
+        set_leds(CRGB(255, 0, 0));
+      }else if (current_time - blink_time < 650){
+        FastLED.clear();
+      }else{
+        set_leds(CRGB(255, 0, 0));
+      }
       FastLED.show();
       break;
     case END:
@@ -242,7 +249,14 @@ void handle_state() {
       } else {
         matrix_display(end);
       }
-      set_leds(CRGB(255, 0, 0));
+      if (current_time - blink_time < 400){
+        set_leds(CRGB(255, 0, 0));
+      }else if (current_time - blink_time < 650){
+        FastLED.clear();
+      }else{
+        set_leds(CRGB(255, 0, 0));
+      }
+
       FastLED.show();
       break;
   }
@@ -333,10 +347,12 @@ void transition(int transition) {
         match_time = 0;
         break;
       case PAUSE:
+      blink_time = current_time;
         fight_seconds++;
         sendCmd(202);
         break;
       case END:
+      blink_time = current_time;
         sendCmd(203);
         break;
     }
