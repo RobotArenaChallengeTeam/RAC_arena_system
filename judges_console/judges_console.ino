@@ -78,8 +78,8 @@ void setup() {
 }
 
 void loop() {
-  handle_pit();
   current_time = millis();
+  handle_pit();
   handle_state();
   handle_consoles();
   delay(20);
@@ -95,11 +95,11 @@ void handle_pit() {
   }
 
   if (pit_state != pit_cmd) {
-    if (pit_cmd == PIT_DOWN && digitalRead(OVERRIDE_PIN)) {
+    if (pit_cmd == PIT_DOWN) {
       pit_state = PIT_DOWN;
       pit_cmd_ms = current_time;
     }
-    if (pit_cmd == PIT_UP && !digitalRead(OVERRIDE_PIN)) {
+    if (pit_cmd == PIT_UP ) {
       pit_state = PIT_UP;
       pit_cmd_ms = current_time;
     }
@@ -174,13 +174,13 @@ void scroll_writing(unsigned char writing[], int size, int scroll_speed = 150) {
 void handle_state() {
   switch (current_state) {
     case OFF:
+      pit_cmd = PIT_UP;
       led_fade_step();
-      scroll_writing(waiting, sizeof(waiting));
+      scroll_writing(standby, sizeof(standby));
       roundround_strip(96);
       FastLED.show();
       break;
     case STANDBY:
-      pit_cmd = PIT_UP;
       digitalWrite(BTN_LED, LOW);
       scroll_writing(waiting, sizeof(waiting));
       player_ready_led();
