@@ -74,7 +74,7 @@ void setup() {
   FastLED.addLeds<WS2812, LEDRGB_PIN, GRB>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
   FastLED.clear();
 
-  sendCmd(200);
+  sendCmd(204);
 }
 
 void loop() {
@@ -203,7 +203,7 @@ void handle_state() {
         FastLED.show();
       }
       if (current_time - countdown_time > 1000) {
-        Serial.println(300 + countdown_i);
+        //Serial.println(300 + countdown_i);
         countdown_i--;
         countdown_time = current_time;
       }
@@ -332,7 +332,8 @@ void transition(int transition) {
     scroll_time = 0;
     switch (current_state) {
       case OFF:
-        sendCmd(200);
+        sendCmd(204);
+        break;
       case STANDBY:
         sendCmd(200);
         break;
@@ -360,6 +361,7 @@ void transition(int transition) {
 }
 
 void sendCmd(int cmd) {
+  Serial.print("sent: ");
   Serial.println(cmd);
   if (cmd == 201) {
     if (player_b_ready) {

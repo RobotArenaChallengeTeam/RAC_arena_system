@@ -20,17 +20,18 @@ enum States {
   SET,
   FIGHT,
   PAUSE,
-  END
+  END,
+  STANDBY
 };
 
 int secs = 180;
-int cmd = 200;
+int cmd = 204;
 int led_brightness = 0;
 int brightness_dir = 1;
 bool btn_hold = false;
 String inString = "";
 unsigned long current_time = 0;
-States current_state = READY;
+States current_state = STANDBY;
 void setup() {
   pinMode(BTN_LED, OUTPUT);
   pinMode(BTN_PIN, INPUT_PULLUP);
@@ -88,7 +89,7 @@ void loop() {
   }
   if (cmd <= 180) {
     current_state = FIGHT;
-  } else if (cmd == 200) {
+  }else if (cmd == 200) {
     current_state = READY;
   } else if (cmd == 201) {
     current_state = SET;
@@ -96,8 +97,20 @@ void loop() {
     current_state = PAUSE;
   } else if (cmd == 203) {
     current_state = END;
+  } else if (cmd == 204) {
+    current_state = STANDBY;
   }
   switch (current_state) {
+    case STANDBY:
+      if (btn_just_pressed) {
+        Serial1.println("e");
+      }
+      led_fade_step();
+      display.clearDisplay();
+      display.setCursor(0, 20);
+      display.println(" STBY");
+      display.display();
+      break;
     case READY:
       if (btn_just_pressed) {
         Serial1.println("r");
