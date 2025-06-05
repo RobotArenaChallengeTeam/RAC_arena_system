@@ -86,6 +86,7 @@ void loop() {
 }
 
 void handle_pit() {
+  
   if (override_mode) {
     if (!digitalRead(OVERRIDE_PIN)) {
       pit_cmd = PIT_UP;
@@ -116,6 +117,8 @@ void handle_pit() {
     pit_stop();
   }
 }
+
+
 bool btn_hold = false;
 unsigned long btn_press_time = 0;
 bool longpress = false;
@@ -203,7 +206,7 @@ void handle_state() {
         FastLED.show();
       }
       if (current_time - countdown_time > 1000) {
-        //Serial.println(300 + countdown_i);
+        Serial.println(300 + countdown_i);
         countdown_i--;
         countdown_time = current_time;
       }
@@ -361,7 +364,7 @@ void transition(int transition) {
 }
 
 void sendCmd(int cmd) {
-  Serial.print("sent: ");
+  //Serial.print("sent: ");
   Serial.println(cmd);
   if (cmd == 201) {
     if (player_b_ready) {

@@ -58,7 +58,7 @@ label = tk.Label(root, text="-", font=("Arial Bold", 100), bg="#00ff00", fg="whi
 label.place(relx=0.5, rely=0.5, anchor="center")  # Posizionamento centrale
 
 cmd = ""
-audio_path ='./audio/'
+audio_path ='E:/repos/RAC_arena_system/pc_system/audio/'
 while True:
     in_ch = ser.read().decode("utf-8")
     if in_ch != '\n':
@@ -79,14 +79,14 @@ while True:
             label.config(text="END")
         if command_int >=300:
             count_i = command_int-300
+            print("playing:" + audio_path+str(count_i)+".wav")
             playsound(audio_path+str(count_i)+".wav",block =False)
             if count_i > 0:
                 label.config(text=str(count_i)+'..')
             else:
                 label.config(text='GO!')
-                
-                
-        root.update()
         cmd = ""
+    root.update()
+    
             
     
