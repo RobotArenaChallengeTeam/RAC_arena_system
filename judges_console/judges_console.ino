@@ -89,7 +89,8 @@ void handle_pit() {
   
   if (override_mode) {
     if (!digitalRead(OVERRIDE_PIN)) {
-      pit_cmd = PIT_UP;
+      //pit_cmd = PIT_UP;
+      ;
     } else {
       pit_cmd = PIT_DOWN;
     }
@@ -149,6 +150,9 @@ void handle_consoles() {
     if (cmd_b == 't') {
       transition(PLAYER_B_T);
     }
+    if (cmd_b == 'e') {
+      transition(END);
+    }
   }
   if (Serial1.available()) {
     char cmd_y = Serial1.read();
@@ -157,6 +161,9 @@ void handle_consoles() {
     }
     if (cmd_y == 't') {
       transition(PLAYER_Y_T);
+    }
+    if (cmd_y == 'e') {
+      transition(END);
     }
   }
 }
@@ -272,6 +279,9 @@ void transition(int transition) {
       if (transition == SET){
         current_state = STANDBY;
       }
+      if (transition == END){
+        current_state = END;
+      }
       break;
     case STANDBY:
       if (transition == PLAYER_B_R) {
@@ -285,6 +295,7 @@ void transition(int transition) {
       if (player_y_ready && player_b_ready) {
         current_state = PLAYER_READY;
       }
+      
       break;
     case PLAYER_READY:
       if (transition == SET) {
