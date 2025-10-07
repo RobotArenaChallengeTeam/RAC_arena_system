@@ -1,4 +1,5 @@
-#pip install playsound
+#pip install --upgrade wheel
+#pip install playsound==1.2.2
 #pip install pyserial
 
 from playsound import playsound
@@ -58,7 +59,7 @@ label = tk.Label(root, text="-", font=("Arial Bold", 100), bg="#00ff00", fg="whi
 label.place(relx=0.5, rely=0.5, anchor="center")  # Posizionamento centrale
 
 cmd = ""
-audio_path ='E:/repos/RAC_arena_system/pc_system/audio/'
+audio_path ="C:/Users/Paolo/Documents/GitHub/RAC_arena_system/pc_system/audio/"
 while True:
     in_ch = ser.read().decode("utf-8")
     if in_ch != '\n':
