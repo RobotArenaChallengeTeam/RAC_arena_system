@@ -71,7 +71,7 @@ void setup() {
     override_mode = true;
   }
   init_led_display();
-  FastLED.addLeds<WS2812, LEDRGB_PIN, GRB>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
+  FastLED.addLeds<WS2815, LEDRGB_PIN, RGB>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
   FastLED.clear();
 
   sendCmd(204);
