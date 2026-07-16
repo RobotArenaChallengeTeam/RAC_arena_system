@@ -13,6 +13,22 @@
 #define PIT_MOVE_TIME 5000
 CRGB leds[NUM_LEDS];
 
+//cmds
+/*
+0-180 seconds
+200 player ready
+201 player set
+202 pause
+203 end
+204 reset
+303 tre
+302 due
+301 uno
+300 via
+205 resa blu
+206 resa giallo
+*/
+
 enum State { OFF,
              STANDBY,
              PLAYER_READY,
@@ -86,7 +102,7 @@ void loop() {
 }
 
 void handle_pit() {
-  
+
   if (override_mode) {
     if (!digitalRead(OVERRIDE_PIN)) {
       //pit_cmd = PIT_UP;
@@ -101,7 +117,7 @@ void handle_pit() {
       pit_state = PIT_DOWN;
       pit_cmd_ms = current_time;
     }
-    if (pit_cmd == PIT_UP ) {
+    if (pit_cmd == PIT_UP) {
       pit_state = PIT_UP;
       pit_cmd_ms = current_time;
     }
@@ -193,12 +209,14 @@ void handle_state() {
     case STANDBY:
       digitalWrite(BTN_LED, LOW);
       scroll_writing(waiting, sizeof(waiting));
+      FastLED.clear();
       player_ready_led();
       FastLED.show();
       break;
     case PLAYER_READY:
       led_fade_step();
       scroll_writing(ready, sizeof(ready));
+      FastLED.clear();
       player_ready_led();
       FastLED.show();
       break;
@@ -241,11 +259,11 @@ void handle_state() {
     case PAUSE:
       led_fade_step();
       scroll_writing(pause, sizeof(pause));
-      if (current_time - blink_time < 400){
+      if (current_time - blink_time < 400) {
         set_leds(CRGB(255, 0, 0));
-      }else if (current_time - blink_time < 650){
+      } else if (current_time - blink_time < 650) {
         FastLED.clear();
-      }else{
+      } else {
         set_leds(CRGB(255, 0, 0));
       }
       FastLED.show();
@@ -259,14 +277,13 @@ void handle_state() {
       } else {
         matrix_display(end);
       }
-      if (current_time - blink_time < 400){
+      if (current_time - blink_time < 400) {
         set_leds(CRGB(255, 0, 0));
-      }else if (current_time - blink_time < 650){
+      } else if (current_time - blink_time < 650) {
         FastLED.clear();
-      }else{
+      } else {
         set_leds(CRGB(255, 0, 0));
       }
-
       FastLED.show();
       break;
   }
@@ -274,12 +291,14 @@ void handle_state() {
 
 void transition(int transition) {
   State prev_state = current_state;
+
+  //handling transition
   switch (current_state) {
     case OFF:
-      if (transition == SET){
+      if (transition == SET) {
         current_state = STANDBY;
       }
-      if (transition == END){
+      if (transition == END) {
         current_state = END;
       }
       break;
@@ -295,7 +314,6 @@ void transition(int transition) {
       if (player_y_ready && player_b_ready) {
         current_state = PLAYER_READY;
       }
-      
       break;
     case PLAYER_READY:
       if (transition == SET) {
@@ -310,10 +328,12 @@ void transition(int transition) {
     case FIGHT:
       if (transition == PLAYER_B_T) {
         player_b_tap = true;
+        sendCmd(205);
         current_state = END;
       }
       if (transition == PLAYER_Y_T) {
         player_y_tap = true;
+        sendCmd(206);
         current_state = END;
       }
       if (transition == SET) {
@@ -341,6 +361,8 @@ void transition(int transition) {
     player_b_tap = false;
     player_y_tap = false;
   }
+
+  //entering new state
   if (current_state != prev_state) {
     scrol_off = 0;
     scroll_time = 0;
@@ -362,13 +384,15 @@ void transition(int transition) {
         match_time = 0;
         break;
       case PAUSE:
-      blink_time = current_time;
+        blink_time = current_time;
         fight_seconds++;
         sendCmd(202);
         break;
       case END:
-      blink_time = current_time;
-        sendCmd(203);
+        blink_time = current_time;
+        if (!player_b_tap && !player_y_tap) {
+          sendCmd(203);
+        }
         break;
     }
   }
@@ -431,15 +455,13 @@ void roundround_strip(int len) {
     if (i < ((fade_b + len) % NUM_LEDS) && fade_b > NUM_LEDS - len) {
       leds[i] = CRGB(0, 0, 255);
     }
-
   }
-  
-    fade_y = (fade_y + 1 < NUM_LEDS) ? fade_y + 1 : 0;
-    fade_b = (fade_b + 1 < NUM_LEDS) ? fade_b + 1 : 0;
+
+  fade_y = (fade_y + 1 < NUM_LEDS) ? fade_y + 1 : 0;
+  fade_b = (fade_b + 1 < NUM_LEDS) ? fade_b + 1 : 0;
 }
 
 void player_ready_led() {
-  FastLED.clear();
   if (player_y_ready) {
     for (int l = 150; l < 250; l++) {
       leds[l % NUM_LEDS] = CRGB(255, 150, 0);

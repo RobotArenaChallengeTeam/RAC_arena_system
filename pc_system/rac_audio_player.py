@@ -59,7 +59,7 @@ label = tk.Label(root, text="-", font=("Arial Bold", 100), bg="#00ff00", fg="whi
 label.place(relx=0.5, rely=0.5, anchor="center")  # Posizionamento centrale
 
 cmd = ""
-audio_path ="C:/Users/Paolo/Documents/GitHub/RAC_arena_system/pc_system/audio/"
+audio_path ="E:/repos/RAC_arena_system/pc_system/audio/"
 while True:
     in_ch = ser.read().decode("utf-8")
     if in_ch != '\n':
@@ -69,23 +69,33 @@ while True:
         command_int = int(cmd)
         if command_int <= 180:
             time_sec = command_int
+            if command_int == 94 or command_int == 92:
+                    playsound(audio_path+'pit.wav',block =False)
             update_timer()
         if command_int ==200:
-            label.config(text="-")
+            label.config(text="RDY")
         if command_int ==202:
             playsound(audio_path+'pause.wav',block =False)
             label.config(text="II" )
         if command_int ==203:
             playsound(audio_path+'cease.wav',block =False)
             label.config(text="END")
+        if command_int ==204:
+            label.config(text="STBY")
+        if command_int ==205:
+            playsound(audio_path+'blu_tap.wav',block =False)
+            label.config(text="END")
+        if command_int ==206:
+            playsound(audio_path+'yellow_tap.wav',block =False)
+            label.config(text="END")
         if command_int >=300:
             count_i = command_int-300
-            print("playing:" + audio_path+str(count_i)+".wav")
+            #print("playing:" + audio_path+str(count_i)+".wav")
             playsound(audio_path+str(count_i)+".wav",block =False)
             if count_i > 0:
                 label.config(text=str(count_i)+'..')
             else:
-                label.config(text='GO!')
+                label.config(text='VIA!')
         cmd = ""
     root.update()
     
