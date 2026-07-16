@@ -69,7 +69,7 @@ while True:
         command_int = int(cmd)
         if command_int <= 180:
             time_sec = command_int
-            if command_int == 94 or command_int == 92:
+            if command_int == 96 or command_int == 94 or command_int == 92:
                     playsound(audio_path+'pit.wav',block =False)
             update_timer()
         if command_int ==200:

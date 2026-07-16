@@ -54,7 +54,7 @@ enum Transition { RESET,
 };
 
 State current_state = OFF;
-int match_length = 180;
+int match_length = 100;
 int rac_length = 90;
 int fight_seconds = match_length;
 int countdown_i = 0;
@@ -253,7 +253,22 @@ void handle_state() {
       if (fight_seconds < 90) {
         pit_cmd = PIT_DOWN;
       }
-      set_leds(CRGB(255, 255, 255));
+      for (int l = 0; l < NUM_LEDS; l++) {
+        if (fight_seconds >= 90 && fight_seconds < 96) {
+
+          if (l > 9 && l < 40) {
+            if (fight_seconds % 2) {
+              leds[l] = CRGB(255, 0, 0);
+            } else {
+              leds[l] = CRGB(0, 0, 0);
+            }
+          } else {
+            leds[l] = CRGB(255, 255, 255);
+          }
+        }else{
+          leds[l] = CRGB(255, 255, 255);
+        }
+      }
       FastLED.show();
       break;
     case PAUSE:
