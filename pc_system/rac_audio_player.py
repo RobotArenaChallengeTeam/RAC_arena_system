@@ -16,7 +16,7 @@ ser_fail = True
 while ser_fail:
     try:
         port_n = input("PORT NUMBER: ").strip()
-        ser = serial.Serial(port='COM'+port_n,baudrate=9600, dsrdtr = True, timeout=.1)  # open serial port
+        ser = serial.Serial(port='COM'+port_n,baudrate=115200, dsrdtr = True, timeout=.1)  # open serial port
         print(ser.name)
         ser_fail = False
     except serial.SerialException as e:
@@ -59,7 +59,7 @@ label = tk.Label(root, text="-", font=("Arial Bold", 100), bg="#00ff00", fg="whi
 label.place(relx=0.5, rely=0.5, anchor="center")  # Posizionamento centrale
 
 cmd = ""
-audio_path ="E:/repos/RAC_arena_system/pc_system/audio/"
+audio_path ="C:/Users/Paolo/Documents/GitHub/RAC_arena_system/pc_system/audio/"
 while True:
     in_ch = ser.read().decode("utf-8")
     if in_ch != '\n':
@@ -70,6 +70,8 @@ while True:
         if command_int <= 180:
             time_sec = command_int
             if command_int == 96 or command_int == 94 or command_int == 92:
+                    playsound(audio_path+'pit.wav',block =False)
+            if command_int == 81 or command_int == 79 or command_int == 77:
                     playsound(audio_path+'pit.wav',block =False)
             update_timer()
         if command_int ==200:

@@ -54,9 +54,10 @@ enum Transition { RESET,
 };
 
 State current_state = OFF;
-int match_length = 100;
+int match_length = 90;
 int rac_length = 90;
 int fight_seconds = match_length;
+int pit_seconds = 75;
 int countdown_i = 0;
 bool player_b_ready = false;
 bool player_y_ready = false;
@@ -74,7 +75,7 @@ unsigned long blink_time = 0;
 void setup() {
   Serial1.begin(9600);
   Serial2.begin(9600);
-  Serial.begin(9600);
+  Serial.begin(115200);
   pinMode(BTN_LED, OUTPUT);
   pinMode(BTN_PIN, INPUT_PULLUP);
   pinMode(OVERRIDE_PIN, INPUT_PULLUP);
@@ -153,7 +154,7 @@ void handle_consoles() {
     btn_hold = false;
   }
   if (btn_hold) {
-    if (!longpress && current_time - btn_press_time > 3000) {
+    if (!longpress && current_time - btn_press_time > 1500) {
       longpress = true;
       transition(RESET);
     }
@@ -250,14 +251,14 @@ void handle_state() {
           transition(TIMEOUT);
         }
       }
-      if (fight_seconds < 90) {
+      if (fight_seconds < pit_seconds) {
         pit_cmd = PIT_DOWN;
       }
       for (int l = 0; l < NUM_LEDS; l++) {
-        if (fight_seconds >= 90 && fight_seconds < 96) {
+        if (fight_seconds >= pit_seconds && fight_seconds < pit_seconds+6) {
 
           if (l > 9 && l < 40) {
-            if (fight_seconds % 2) {
+            if (fight_seconds % 2 != 1) {
               leds[l] = CRGB(255, 0, 0);
             } else {
               leds[l] = CRGB(0, 0, 0);
@@ -311,11 +312,11 @@ void transition(int transition) {
   switch (current_state) {
     case OFF:
       if (transition == SET) {
-        current_state = STANDBY;
+        current_state = COUNTDOWN; //change
       }
-      if (transition == END) {
-        current_state = END;
-      }
+      //if (transition == END) {
+      //  current_state = END;
+      //}
       break;
     case STANDBY:
       if (transition == PLAYER_B_R) {
@@ -341,16 +342,16 @@ void transition(int transition) {
       }
       break;
     case FIGHT:
-      if (transition == PLAYER_B_T) {
-        player_b_tap = true;
-        sendCmd(205);
-        current_state = END;
-      }
-      if (transition == PLAYER_Y_T) {
-        player_y_tap = true;
-        sendCmd(206);
-        current_state = END;
-      }
+      //if (transition == PLAYER_B_T) {
+      //  player_b_tap = true;
+      //  sendCmd(205);
+      //  current_state = END;
+      //}
+      //if (transition == PLAYER_Y_T) {
+      //  player_y_tap = true;
+      //  sendCmd(206);
+      //  current_state = END;
+      //}
       if (transition == SET) {
         current_state = PAUSE;
       }
@@ -478,12 +479,12 @@ void roundround_strip(int len) {
 
 void player_ready_led() {
   if (player_y_ready) {
-    for (int l = 150; l < 250; l++) {
+    for (int l = 100; l < 200; l++) {
       leds[l % NUM_LEDS] = CRGB(255, 150, 0);
     }
   }
   if (player_b_ready) {
-    for (int l = 50; l < 150; l++) {
+    for (int l = 0; l < 100; l++) {
       leds[l] = CRGB(0, 0, 255);
     }
   }
